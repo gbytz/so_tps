@@ -13,6 +13,8 @@ vector<vector<char> > tablero_palabras; // solamente tiene las palabras válidas
 unsigned int ancho = -1;
 unsigned int alto = -1;
 
+RWLock lock_tablero_letras = RWLock();
+RWLock lock_tablero_palabras = RWLock();
 
 
 bool cargar_int(const char* numero, unsigned int& n) {
@@ -130,7 +132,11 @@ void atendedor_de_jugador(int socket_fd) {
             // verificar si es una posición válida del tablero
             if (es_ficha_valida_en_palabra(ficha, palabra_actual)) {
                 palabra_actual.push_back(ficha);
+                
+                lock_tablero_letras.wlock();
                 tablero_letras[ficha.fila][ficha.columna] = ficha.letra;
+                lock_tablero_letras.wunlock();
+
                 // OK
                 if (enviar_ok(socket_fd) != 0) {
                     // se produjo un error al enviar. Cerramos todo.
@@ -148,9 +154,12 @@ void atendedor_de_jugador(int socket_fd) {
         }
         else if (comando == MSG_PALABRA) {
             // las letras acumuladas conforman una palabra completa, escribirlas en el tablero de palabras y borrar las letras temporales
+            lock_tablero_palabras.wlock();
             for (list<Casillero>::const_iterator casillero = palabra_actual.begin(); casillero != palabra_actual.end(); casillero++) {
                 tablero_palabras[casillero->fila][casillero->columna] = casillero->letra;
             }
+            lock_tablero_palabras.wunlock();
+
             palabra_actual.clear();
 
             if (enviar_ok(socket_fd) != 0) {
@@ -249,6 +258,7 @@ int enviar_tablero(int socket_fd) {
     char buf[MENSAJE_MAXIMO+1];
     sprintf(buf, "STATUS ");
     int pos = 7;
+    lock_tablero_palabras.rlock();
     for (unsigned int fila = 0; fila < alto; ++fila) {
         for (unsigned int col = 0; col < ancho; ++col) {
             char letra = tablero_palabras[fila][col];
@@ -256,6 +266,7 @@ int enviar_tablero(int socket_fd) {
             pos++;
         }
     }
+    lock_tablero_palabras.runlock();
     buf[pos] = 0; //end of buffer
 
     return enviar(socket_fd, buf);
@@ -295,9 +306,11 @@ void terminar_servidor_de_jugador(int socket_fd, list<Casillero>& palabra_actual
 
 
 void quitar_letras(list<Casillero>& palabra_actual) {
+    lock_tablero_letras.wlock();
     for (list<Casillero>::const_iterator casillero = palabra_actual.begin(); casillero != palabra_actual.end(); casillero++) {
         tablero_letras[casillero->fila][casillero->columna] = VACIO;
     }
+    lock_tablero_letras.wunlock();
     palabra_actual.clear();
 }
 
@@ -309,9 +322,12 @@ bool es_ficha_valida_en_palabra(const Casillero& ficha, const list<Casillero>& p
     }
 
     // si el casillero está ocupado, tampoco es válida
+    lock_tablero_letras.rlock();
     if (tablero_letras[ficha.fila][ficha.columna] != VACIO) {
+        lock_tablero_letras.runlock();
         return false;
     }
+    lock_tablero_letras.runlock();
 
     if (palabra_actual.size() > 0) {
         // no es la primera letra de la palabra, ya hay fichas colocadas para esta palabra
@@ -329,12 +345,15 @@ bool es_ficha_valida_en_palabra(const Casillero& ficha, const list<Casillero>& p
             }
 
             int paso = distancia_horizontal / abs(distancia_horizontal);
+            lock_tablero_palabras.rlock();
             for (unsigned int columna = mas_distante.columna; columna != ficha.columna; columna += paso) {
                 // el casillero DEBE estar ocupado en el tablero de palabras
                 if (!(puso_letra_en(ficha.fila, columna, palabra_actual)) && tablero_palabras[ficha.fila][columna] == VACIO) {
+                    lock_tablero_palabras.runlock();
                     return false;
                 }
             }
+            lock_tablero_palabras.runlock();
 
         } else if (distancia_horizontal == 0) {
             // la palabra es vertical
@@ -346,12 +365,15 @@ bool es_ficha_valida_en_palabra(const Casillero& ficha, const list<Casillero>& p
             }
 
             int paso = distancia_vertical / abs(distancia_vertical);
+            lock_tablero_palabras.rlock();
             for (unsigned int fila = mas_distante.fila; fila != ficha.fila; fila += paso) {
                 // el casillero DEBE estar ocupado en el tablero de palabras
                 if (!(puso_letra_en(fila, ficha.columna, palabra_actual)) && tablero_palabras[fila][ficha.columna] == VACIO) {
+                    lock_tablero_palabras.runlock();
                     return false;
                 }
             }
+            lock_tablero_palabras.runlock();
         }
         else {
             // no están alineadas ni horizontal ni verticalmente
