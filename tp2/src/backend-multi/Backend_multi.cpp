@@ -305,12 +305,9 @@ void cerrar_servidor(int signal) {
 
 void terminar_servidor_de_jugador(int socket_fd, list<Casillero>& palabra_actual) {
     cout << "Se interrumpió la comunicación con un cliente" << endl;
-
     close(socket_fd);
-
     quitar_letras(palabra_actual);
-
-    exit(-1);
+    pthread_exit(NULL);
 }
 
 
