@@ -2,7 +2,7 @@
 
 RWLock :: RWLock() {
 	pthread_mutex_init(&mutex, NULL);
-	ptread_cond_init(&roomEmpty, NULL);
+	pthread_cond_init(&roomEmpty, NULL);
 	readers = 0;
 }
 
