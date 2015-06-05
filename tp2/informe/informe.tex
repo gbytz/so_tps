@@ -1,0 +1,94 @@
+% !TeX root = informe.tex
+\documentclass[a4,11pt]{article}
+\usepackage[paper=a4paper, left=3cm, right=3cm, bottom=2.5cm, top=2.5cm]{geometry}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+\usepackage{caption}
+\usepackage{caratula} %Paquete para usar la caratula del DC.(*You don't say?*)
+\usepackage{listings}
+
+% Esto es un """hack""" para que listings pueda mostrar carácteres especiales en el código embebido (source: https://en.wikibooks.org/wiki/LaTeX/Source_Code_Listings#Encoding_issue )
+\lstset{literate=
+  {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+  {à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+  {À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+  {ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+  {Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+  {â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+  {Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+  {œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+  {ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+  {€}{{\EUR}}1 {£}{{\pounds}}1,
+}
+
+\usepackage{multicol}
+\usepackage{nameref}
+\usepackage{natbib}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure} %Paquete para crear subfloats para poner varias imagenes en una linea
+\usepackage[svgnames, table, usenames, dvipsnames]{xcolor}
+\usepackage{tabularx}
+
+\usepackage{a4wide}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\parindent = 0 pt
+\parskip = 11 pt
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{gray}{0.25}
+\definecolor{myblue}{rgb}{0.2,0.2,0.6}
+
+%Estilos para el c\'odigo fuente
+\lstset{
+	basicstyle=\ttfamily\scriptsize,
+	breaklines=true,
+	captionpos=b,
+	commentstyle=\color{mygreen},
+	escapechar=@,
+	extendedchars=true,
+	identifierstyle=\color{myblue},
+	language=C++,
+	numbers=left,
+	numberstyle=\tiny\color{mygray},
+	stringstyle=\color{orange},	
+	tabsize=3
+}
+
+\begin{document}
+
+\titulo{TP 2 - Threads}
+\fecha{10/06/2015}
+\materia{Sistemas Operativos}
+\integrante{Gabriel Gramajo}{564/09}{gramajogm@gmail.com}
+\integrante{Paula Jimenez}{655/10}{puly05@gmail.com}
+
+\maketitle
+
+\pagenumbering{arabic}
+\parindent 2em %Define indentado de cada parrafo
+\parskip 4pt %Define el espacio entre parrafos
+\renewcommand{\baselinestretch}{1.5}
+
+\,
+\clearpage
+\hbox{}
+\thispagestyle{empty}
+%\newpage
+
+%\tableofcontents
+
+\setcounter{section}{0}
+
+\newpage
+
+\section{Ejercicio 1}
+
+\section{Ejercicio 2}
+
+
+\end{document}
+
