@@ -13,6 +13,8 @@ vector<vector<char> > tablero_palabras; // solamente tiene las palabras válidas
 unsigned int ancho = -1;
 unsigned int alto = -1;
 
+vector<pthread_t> threads_clientes;
+
 RWLock lock_tablero_letras = RWLock();
 RWLock lock_tablero_palabras = RWLock();
 
@@ -80,7 +82,7 @@ int main(int argc, const char* argv[]) {
     }
 
     // escuchar en el socket
-    if (listen(socket_servidor, 1) == -1) {
+    if (listen(socket_servidor, SOMAXCONN) == -1) {
         cerr << "Error escuchando socket!" << endl;
         return 1;
     }
@@ -92,7 +94,11 @@ int main(int argc, const char* argv[]) {
             cerr << "Error al aceptar conexion" << endl;
         else {
             close(socket_servidor);
-            atendedor_de_jugador(socketfd_cliente);
+
+            pthread_t nuevo_cliente;
+            int args = socketfd_cliente;
+            pthread_create(&nuevo_cliente, NULL, atender_cliente, (void*) &args);
+            // atendedor_de_jugador(socketfd_cliente);
         }
     }
 
@@ -100,6 +106,11 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
+void* atender_cliente(void* args){
+    int socket_cliente = *((int*)args);
+    atendedor_de_jugador(socket_cliente);
+    return NULL;
+}
 
 void atendedor_de_jugador(int socket_fd) {
     // variables locales del jugador

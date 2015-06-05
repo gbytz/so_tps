@@ -10,6 +10,7 @@
 using namespace std;
 bool cargar_int(const char* numero, unsigned int& n);
 
+void* atender_cliente(void* args);
 void atendedor_de_jugador(int socket_fd);
 
 
