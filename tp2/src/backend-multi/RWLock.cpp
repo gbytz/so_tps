@@ -2,6 +2,8 @@
 
 RWLock :: RWLock() {
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&mutexRoom, NULL);
+	pthread_mutex_init(&turnstile, NULL);
 	pthread_cond_init(&roomEmpty, NULL);
 	readers = 0;
 }

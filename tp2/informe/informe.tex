@@ -86,6 +86,20 @@
 \newpage
 
 \section{Ejercicio 1}
+Para implementar los locks nos basamos en la solución sin starvation del problema Readers-writers del libro The little book of semaphores.
+
+A continuación vamos a mostrar el código presentado en el libro y vamos a contar de que manera lo adaptamos para usar las variables de condición que proveen los threads.
+\subsection{Inicialización}
+En el constructor de la clase, inicializamos los semáforos \emph{mutex}, \emph{turnstile} y una variable \emph{readers} que mantiene la cuenta de cuantos readers están accediendo a la sección crítica en cada momento. El semáforo \emph{roomEmpty} que propone el libro, lo transformamos en una condición \emph{roomEmpty} y un semáforo \emph{mutexRoom}, que van a estar asociados en la variable de condición que despierta a un writer cuando no hay ningún reader leyendo.
+\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=0, lastline=4]{readers-writers.cpp}
+
+\subsection{Código Escritores}
+\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=7, lastline=13]{readers-writers.cpp}
+
+
+
+\subsection{Código Lectores}
+\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=17, lastline=33]{readers-writers.cpp}
 
 \section{Ejercicio 2}
 
