@@ -87,8 +87,18 @@
 
 \section{Ejercicio 1}
 
-\section{Ejercicio 2}
 
+\section{Ejercicio 2}
+\subsection{Funcionamiento del Servidor}
+	Al iniciarse el servidor crea dos estructuras que utilizará internamente para representar el tablero. En una de ellas almacenará la palabras que ya están puestas en el tablero, mientras que la otra tendrá las letras que están siendo colocadas pero aún no han sido confirmadas. Como estas estructuras deberán ser accedidas de manera concurrente por cada uno de los threads que atiende a los clientes creamos un par de Read-Write Lock, uno que utilizaremos para resguardar el tablero de palabras y otro para el tablero de letras.
+	
+	Luego se inicializar las estructuras internas y crear los locks, el servidor abre un socket en el que quedará a las espera de conexiones por parte de los clientes. Cuando se abre una conexión con un cliente el servidor crea un thread para ejecutar la rutina de atención de los pedidos del cliente.
+
+\subsubsection{Atención de un cliente}
+	Los pedidos de cada cliente se atiende en un thread particular. La rutina que se ejecuta en este thread recibe por parametro el socket que se creó al establecer la conexión.
+	El pseudo código de esta rutina es el siguiente:
+	
+	\lstinputlisting[]{ejercicio2}
 
 \end{document}
 
