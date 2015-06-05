@@ -1,0 +1,6 @@
+*.o
+*.aux
+*.log
+*.pdf
+*.synctex.gz
+backend
