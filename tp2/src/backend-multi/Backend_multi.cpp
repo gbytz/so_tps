@@ -93,8 +93,6 @@ int main(int argc, const char* argv[]) {
         if ((socketfd_cliente = accept(socket_servidor, (struct sockaddr*) &remoto, (socklen_t*) &socket_size)) == -1)
             cerr << "Error al aceptar conexion" << endl;
         else {
-            close(socket_servidor);
-
             pthread_t nuevo_cliente;
             int args = socketfd_cliente;
             pthread_create(&nuevo_cliente, NULL, atender_cliente, (void*) &args);
