@@ -1,0 +1,44 @@
+string nombre_jugador;
+list<Casillero> palabra_actual;
+if (!recibir_nombre(socket, nombre_jugador)) terminar_thread(socket);
+if (!enviar_dimensiones(socket)) terminar_thread(socket);
+while(true){
+    string mensaje;
+    comando = recibir_comando(socket, mensaje);
+    switch(comando){
+         case MSG_LETRA:{
+            Casillero ficha = obtener_ficha(mensaje)
+            if (!es_valida(ficha)) continue;
+            if (es_ficha_valida_en_palabra(ficha, palabra_actual)) {
+                palabra_actual.agregar(ficha);
+                
+                lock_letras.wlock();
+                tablero_letras.agregar(ficha.letra);
+                lock_letras.wunlock();
+
+                if (!enviar_ok(socket)) terminar_thread(socket);
+            } else {
+                quitar_letras(palabra_actual);
+                if (!enviar_error(socket)) terminar_thread(socket);
+            }
+        }
+        case MSG_PALABRA:{
+            lock_tablero_palabras.wlock();
+            tablero_palabras.agregar(palabra_actual);
+            lock_tablero_palabras.wunlock();
+
+            palabra_actual.vaciar();
+            if (!enviar_ok(socket)) terminar_thread(socket);
+        }
+        case MSG_UPDATE:{
+            if (!enviar_tablero(socket)) terminar_thread(socket);
+        }
+        case MSG_INVALID:{
+            continue;
+        }
+        default:{
+            palabra_actual.vaciar();
+            terminar_thread(socket);
+        }
+    }
+}
