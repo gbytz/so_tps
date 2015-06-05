@@ -14,6 +14,7 @@ class RWLock {
         pthread_rwlock_t rwlock;
         pthread_cond_t roomEmpty;
         pthread_mutex_t mutex;
+        pthread_mutex_t mutexRoom;
         pthread_mutex_t turnstile;
         int readers;
 };
