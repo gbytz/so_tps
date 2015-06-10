@@ -5,17 +5,19 @@
 class RWLock {
     public:
         RWLock();
+        ~RWLock();
         void rlock();
         void wlock();
         void runlock();
         void wunlock();
 
     private:
-        pthread_rwlock_t rwlock;
+        // pthread_rwlock_t rwlock;
         pthread_cond_t roomEmpty;
         pthread_mutex_t mutex;
         pthread_mutex_t turnstile;
         int readers;
+        int writers;
 };
 
 #endif
