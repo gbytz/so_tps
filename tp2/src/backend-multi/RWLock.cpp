@@ -2,7 +2,6 @@
 
 RWLock :: RWLock() {
 	pthread_mutex_init(&mutex, NULL);
-	pthread_mutex_init(&mutexRoom, NULL);
 	pthread_mutex_init(&turnstile, NULL);
 	pthread_cond_init(&roomEmpty, NULL);
 	readers = 0;
@@ -15,12 +14,8 @@ void RWLock :: rlock() {
 	
 	//pido el mutex para modificar cant de readers
 	pthread_mutex_lock(&mutex);
+	// al aumentar readers bloqueo a los writers
 	readers++;
-	// si soy el primero, bloqueo a los writers
-	// if (readers == 1)
-	// {
-	// 	pthread_mutex_lock(roomEmpty);
-	// }
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -28,12 +23,12 @@ void RWLock :: wlock() {
 	// si paso el turnstile ya no pueden entrar readers
 	pthread_mutex_lock(&turnstile);
 	//chequeo que estoy en condiciones de escribir
-	pthread_mutex_lock(&mutexRoom);
+	pthread_mutex_lock(&mutex);
 	//espero a que no haya ningun reader para avanzar
 	while(readers != 0){
-		pthread_cond_wait(&roomEmpty, &mutexRoom);
+		pthread_cond_wait(&roomEmpty, &mutex);
 	}
-	pthread_mutex_unlock(&mutexRoom);
+	pthread_mutex_unlock(&mutex);
 }
 
 void RWLock :: runlock() {
