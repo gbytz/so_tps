@@ -57,6 +57,7 @@ void RWLock :: runlock() {
 
 void RWLock :: wunlock() {
 	pthread_mutex_lock(&mutex);
+	// siempre soy el ultimo
 	writers--;
 	// despierto a todos los readers que esten esperando
 	pthread_cond_broadcast(&roomEmpty);

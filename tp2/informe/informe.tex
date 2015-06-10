@@ -1,6 +1,6 @@
 % !TeX root = informe.tex
-\documentclass[a4,11pt]{article}
-\usepackage[paper=a4paper, left=3cm, right=3cm, bottom=2.5cm, top=2.5cm]{geometry}
+\documentclass[a4paper,11pt]{article}
+\usepackage[left=3cm, right=3cm, bottom=2.5cm, top=2.5cm]{geometry}
 \usepackage[spanish]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -73,10 +73,10 @@
 \parskip 4pt %Define el espacio entre parrafos
 \renewcommand{\baselinestretch}{1.5}
 
-\,
-\clearpage
-\hbox{}
-\thispagestyle{empty}
+% \,
+% \clearpage
+% \hbox{}
+% \thispagestyle{empty}
 %\newpage
 
 %\tableofcontents
@@ -91,37 +91,45 @@ Para implementar los locks nos basamos en la solución sin starvation del proble
 A continuación vamos a mostrar el código presentado en el libro y vamos a contar de que manera lo adaptamos para usar las variables de condición que provee pthreads.
 
 \subsection{Inicialización}
-En el constructor de la clase, inicializamos los semáforos \emph{mutex}, \emph{turnstile} y una variable \emph{readers} que mantiene la cuenta de cuantos readers están accediendo a la sección crítica en cada momento. El semáforo \emph{roomEmpty} que propone el libro, lo transformamos en una condición \emph{roomEmpty}, que va a estar asociada con el \emph{mutex} en la variable de condición que despierta a un writer cuando no hay ningún reader leyendo.
+En el constructor de la clase, inicializamos los semáforos \emph{mutex}, \emph{turnstile}, una variable \emph{readers} que mantiene la cuenta de cuantos readers están accediendo a la sección crítica en cada momento y una variable \emph{writers} que siempre va a valer $0$ ó $1$ y se utiliza como un flag para saber si hay o no un escritor accediendo a la sección crítica. El semáforo \emph{roomEmpty} que propone el libro, lo transformamos en una condición \emph{roomEmpty}, que va a estar asociada con el \emph{mutex} en la variable de condición que despierta a un writer cuando no hay ningún reader leyendo o a todos los readers que estén esperando la condición, cuando el writer termine de escribir.
 \lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=0, lastline=4]{readers-writers.cpp}
 
 \subsection{Código Escritores}
 Para los locks de los escritores, se adaptó el código que se muestra a continuación, implementando desde el principio hasta \emph{// critical section for writers} en \emph{wlock()} y desde ahí hasta el final en \emph{wunlock()}.
 
 \lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=7, lastline=13]{readers-writers.cpp}
-
+% WLOCK()
 En nuestra adaptación el \emph{turnstile} se utiliza de la misma forma, logrando que al llegar un escritor, todos los lectores que leguen a partir de ese momento, queden bloqueados hasta que el escritor termine de escribir. De esta manera se logra que todos los lectores que ya se encontraban en la sección crítica, terminen de leer y que no entre ningún lector mas, evitando que se produzca inanición de los escritores.
 
-La linea $2$ la transformamos en una variable de condición que nos permite chequear que no haya lectores en la sección crítica. Esto se logra bloqueando el semáforo \emph{mutex} para tener acceso exclusivo a \emph{readers} y chequear que sea igual a cero. De no cumplirse esto, se bloquea en la condición \emph{roomEmpty} hasta que el último lector haga el signal. Cuando esto ocurre, el escritor vuelve a obtener el \emph{mutex} con lo cual puede chequear de manera segura que efectivamente se haya cumplido la condición. Luego desbloquea el \emph{mutex} y entra en la sección crítica.
+La linea $2$ la transformamos en una variable de condición que nos permite chequear que no haya lectores en la sección crítica. Esto se logra bloqueando el semáforo \emph{mutex} para tener acceso exclusivo a \emph{readers} y chequear que sea igual a cero. De no cumplirse esto, se bloquea en la condición \emph{roomEmpty} hasta que el último lector haga el signal. Cuando esto ocurre, el escritor vuelve a obtener el \emph{mutex} con lo cual puede chequear de manera segura que efectivamente se haya cumplido la condición y aumenta \emph{writers} para evitar una race condition en el caso que \emph{readers} sea cero y uno o mas lectores hayan pasado el turnstile justo antes de que llegue el escritor, pero este último haya obtenido el mutex primero, con lo cual no entra en la condición y los lectores al obtener el mutex se bloquean hasta que el escritor termine. Por último el escritor desbloquea el \emph{mutex} y entra en la sección crítica.
+% WUNLOCK()
+En \emph{wunlock()} obtenemos el \emph{mutex} para decrementar \emph{writers} y despertamos a todos los lectores que estén bloqueados en la condición. Luego liberamos el mutex y por último liberamos el turnstile para que los lectores vuelvan a tener acceso a la sección crítica.
 
-En \emph{wunlock()} lo único que hacemos es liberar el turnstile para que los lectores vuelvan a tener acceso a la sección crítica. En este caso, la linea $7$ no es necesaria porque toda la lógica para determinar si un escritor puede acceder a la sección crítica está en la variable de condición. 
+Notar que al hacer el broadcast no hay riesgo de despertar a un escritor ya que cualquiera que haya llegado después del actual, queda bloqueado en el turnstile. 
+
 
 \subsection{Código Lectores}
 De la misma forma que se hizo para los escritores, el código que se presenta a continuación, es dividido en las funciones \emph{rlock()} y \emph{runlock()} por la sección crítica.
 
 \lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=17, lastline=33]{readers-writers.cpp}
+% RLOCK()
+Las lineas $1$ y $2$ implementan una lógica de molinete, que deja pasar a los threads de a uno por vez. De esta forma, si no hay escritores en la sección crítica y/o esperando para escribir, los lectores bloquean el turnstile y lo liberan inmediatamente, permitiendo que entren mas lectores. Al llegar un escritor, bloquea el turnstile y lo mantiene de esta forma hasta que termina de escribir, por lo que todo lector/escritor que llegue después, va a quedar bloqueado en ese semáforo. Una vez que el escritor desbloquea el turnstile, se genera un efecto en cadena en el que se despiertan todos los threads lectores que estaban esperando ese semáforo, ya que al despertarse uno, vuelve a hacer un unlock con lo cual despierta a otro y así consecutivamente. Esto no se da de la misma manera si en algún lugar de la cadena había un thread escritor esperando, ya que al llegar a ese thread, se corta la cadena y no se despierta al resto de los threads hasta que ese escritor salga de su sección crítica.
 
-Las lineas $1$ y $2$ implementan una lógica de molinete, que deja pasar a los threads de a uno por vez. De esta forma, si no hay escritores en la sección crítica y/o esperando para escribir, los lectores bloquean el turnstile y lo liberan inmediatamente, permitiendo que entren mas lectores. Al llegar un escritor, bloquea el turnstile y lo mantiene de esta forma hasta que termina de escribir, por lo que todo lector que llegue después, va a quedar bloqueado en ese semáforo. Una vez que el escritor desbloquea el turnstile, se genera un efecto en cadena en el que se despiertan todos los threads lectores que estaban esperando ese semáforo, ya que al despertarse uno, vuelve a hacer un unlock con lo cual despierta a otro y así consecutivamente. Esto no se da de la misma manera si en algún lugar de la cadena había un thread escritor esperando, ya que al llegar a ese thread, se corta la cadena y no se despierta al resto de los threads hasta que ese escritor salga de su sección crítica.
+Una vez que el lector pasa el turnstile obtiene el \emph{mutex} y chequea que no haya ningún escritor en la sección crítica, en lugar de chequear si es el primero. Sin embargo solo se va a bloquear en la condición si sucede que es el primer lector y había llegado un escritor al mutex primero, que es lo mismo que ocurre en el código presentado arriba. Cuando la condición se cumple, incrementa \emph{readers} para bloquear a los escritores, libera el mutex y entra en la sección crítica.
 
-% Una vez que el escritor pasa el turnstile  
+% RUNLOCK()
+Al salir de la sección crítica, se llama al unlock y este se encarga de pedir el \emph{mutex} para decrementar \emph{readers}, luego si es el último, manda un signal para despertar a un escritor que esté esperando que se cumpla la condición. Por último se libera el \emph{mutex}.
+
+Notar que en este caso se hace solo un signal y no un broadcast ya que no puede suceder que haya otro escritor esperando en \emph{roomEmpty} porque el primero que entra bloquea el turnstile y no permite que ningún otro thread avance mas allá de ese punto. Tampoco puede suceder que haya lectores bloqueados en la condición dado que no pueden ser los primeros y de esa forma \emph{writers} era igual a cero.
 
 \section{Ejercicio 2}
 \subsection{Funcionamiento del Servidor}
-	Al iniciarse el servidor crea dos estructuras que utilizará internamente para representar el tablero. En una de ellas almacenará la palabras que ya están puestas en el tablero, mientras que la otra tendrá las letras que están siendo colocadas pero aún no han sido confirmadas. Como estas estructuras deberán ser accedidas de manera concurrente por cada uno de los threads que atiende a los clientes creamos un par de Read-Write Lock, uno que utilizaremos para resguardar el tablero de palabras y otro para el tablero de letras.
+	Al iniciarse el servidor crea dos estructuras que utilizará internamente para representar el tablero. En una de ellas almacenará la palabras que ya están puestas en el tablero, mientras que la otra tendrá las letras que están siendo colocadas pero aún no han sido confirmadas. Como estas estructuras deberán ser accedidas de manera concurrente por cada uno de los threads que atiende a los clientes creamos un par de Read-Write Locks, uno que utilizaremos para resguardar el tablero de palabras y otro para el tablero de letras.
 	
-	Luego se inicializar las estructuras internas y crear los locks, el servidor abre un socket en el que quedará a las espera de conexiones por parte de los clientes. Cuando se abre una conexión con un cliente el servidor crea un thread para ejecutar la rutina de atención de los pedidos del cliente.
+	Luego de inicializar las estructuras internas y crear los locks, el servidor abre un socket en el que quedará a la espera de conexiones por parte de los clientes. Cuando se abre una conexión con un cliente, el servidor crea un thread para ejecutar la rutina de atención de los pedidos del cliente.
 
 \subsubsection{Atención de un cliente}
-	Los pedidos de cada cliente se atiende en un thread particular. La rutina que se ejecuta en este thread recibe por parametro el socket que se creó al establecer la conexión.
+	Los pedidos de cada cliente se atienden en un thread particular. La rutina que se ejecuta en este thread recibe por parámetro el socket que se creó al establecer la conexión.
 	El pseudo código de esta rutina es el siguiente:
 	
 	\lstinputlisting[]{ejercicio2}
