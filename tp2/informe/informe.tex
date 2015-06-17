@@ -99,10 +99,11 @@ Para los locks de los escritores, se adaptó el código que se muestra a continu
 
 \lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=7, lastline=13]{readers-writers.cpp}
 % WLOCK()
-En nuestra adaptación el \emph{turnstile} se utiliza de la misma forma, logrando que al llegar un escritor, todos los lectores que leguen a partir de ese momento, queden bloqueados hasta que el escritor termine de escribir. De esta manera se logra que todos los lectores que ya se encontraban en la sección crítica, terminen de leer y que no entre ningún lector mas, evitando que se produzca inanición de los escritores.
+En nuestra adaptación el \emph{turnstile} se utiliza de la misma forma, logrando que al llegar un escritor, todos los lectores que lleguen a partir de ese momento, queden bloqueados hasta que el escritor termine de escribir. De esta manera se logra que todos los lectores que ya se encontraban en la sección crítica, terminen de leer y que no entre ningún lector mas, evitando que se produzca inanición de los escritores.
 
 La linea $2$ la transformamos en una variable de condición que nos permite chequear que no haya lectores en la sección crítica. Esto se logra bloqueando el semáforo \emph{mutex} para tener acceso exclusivo a \emph{readers} y chequear que sea igual a cero. De no cumplirse esto, se bloquea en la condición \emph{roomEmpty} hasta que el último lector haga el signal. Cuando esto ocurre, el escritor vuelve a obtener el \emph{mutex} con lo cual puede chequear de manera segura que efectivamente se haya cumplido la condición y aumenta \emph{writers} para evitar una race condition en el caso que \emph{readers} sea cero y uno o mas lectores hayan pasado el turnstile justo antes de que llegue el escritor, pero este último haya obtenido el mutex primero, con lo cual no entra en la condición y los lectores al obtener el mutex se bloquean hasta que el escritor termine. Por último el escritor desbloquea el \emph{mutex} y entra en la sección crítica.
 % WUNLOCK()
+
 En \emph{wunlock()} obtenemos el \emph{mutex} para decrementar \emph{writers} y despertamos a todos los lectores que estén bloqueados en la condición. Luego liberamos el mutex y por último liberamos el turnstile para que los lectores vuelvan a tener acceso a la sección crítica.
 
 Notar que al hacer el broadcast no hay riesgo de despertar a un escritor ya que cualquiera que haya llegado después del actual, queda bloqueado en el turnstile. 
@@ -111,7 +112,7 @@ Notar que al hacer el broadcast no hay riesgo de despertar a un escritor ya que 
 \subsection{Código Lectores}
 De la misma forma que se hizo para los escritores, el código que se presenta a continuación, es dividido en las funciones \emph{rlock()} y \emph{runlock()} por la sección crítica.
 
-\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=17, lastline=33]{readers-writers.cpp}
+\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=16, lastline=33]{readers-writers.cpp}
 % RLOCK()
 Las lineas $1$ y $2$ implementan una lógica de molinete, que deja pasar a los threads de a uno por vez. De esta forma, si no hay escritores en la sección crítica y/o esperando para escribir, los lectores bloquean el turnstile y lo liberan inmediatamente, permitiendo que entren mas lectores. Al llegar un escritor, bloquea el turnstile y lo mantiene de esta forma hasta que termina de escribir, por lo que todo lector/escritor que llegue después, va a quedar bloqueado en ese semáforo. Una vez que el escritor desbloquea el turnstile, se genera un efecto en cadena en el que se despiertan todos los threads lectores que estaban esperando ese semáforo, ya que al despertarse uno, vuelve a hacer un unlock con lo cual despierta a otro y así consecutivamente. Esto no se da de la misma manera si en algún lugar de la cadena había un thread escritor esperando, ya que al llegar a ese thread, se corta la cadena y no se despierta al resto de los threads hasta que ese escritor salga de su sección crítica.
 
