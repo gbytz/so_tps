@@ -145,10 +145,15 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 		
 		\item \emph{MSG\_PALABRA}: el cliente envía este mensaje cuando ha terminado de ingresar una palabra. Desde el lado del servidor debemos agregar la palabra actual del cliente al tablero de palabras. Para esto nuevamente debemos garantizar acceso exclusivo a la estructura por lo cual pedimos un write-lock sobre el tablero de palabras (lineas 26 a 28). Luego limpiamos la palabra actual del jugador y enviamos al cliente el mensaje OK. Nuevamente, si éste último paso falla terminamos el thread.
 		
-		\item \emph{MSG\_UPDATE}:
+		\item \emph{MSG\_UPDATE}: el cliente envía este mensaje cuando solicita saber el estado del tablero. Para eso llamamos a la función enviar\_tablero y le pasamos el socket de la conexión con el cliente. Si este procedimiento falla cerramos el thread.
 		
-		\item \emph{MSG\_INVALID}:
+		\item \emph{MSG\_INVALID}: un mensaje explícitamente inválido desde el cliente (lo manejamos solo por completitud).
+	
 	\end{itemize}
+	
+	En el caso en que el comando recibido no sea ninguno de los antes mencionados manejamos la situación vaciando la palabra actual del jugador y luego cerrando el thread.
+	
+	
 	
 \end{document}
 
