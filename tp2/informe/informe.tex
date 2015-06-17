@@ -141,13 +141,14 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 	Una vez recibido el nombre del jugador y enviadas las dimensiones del tablero se entra en el ciclo de atención de los pedidos. Al principio de este ciclo se recibe el mensaje enviado por el cliente a travez del socket y se parsea el comando (lineas 6 y 7). Luego el servidor actúa en función del mensaje recibido. Los distintos mensajes son:
 	
 	\begin{itemize}
-		\item MSG\_LETRA:
-		\item MSG\_PALABRA:
-		\item MSG\_UPDATE:
-		\item MSG\_INVALID:
+		\item \emph{MSG\_LETRA}: el cliente envía este mensaje cuando desea colocar una letra en el tablero. Primero verificamos que la ficha a poner sea válida, si no es así el mensaje se ignora. Si la ficha es válida en el tablero pasamos a verificar que sea válida en la palabra y luego de esta comprobación se pasa a agregar la letra en el tablero de letras. En primer lugar agregamos la letra a la palabra temporal (linea 13) luego procedemos a agregarla al tablero efectivamente. Para esto necesitamos asegurarnos acceso exclusivo a dicho tablero para lo cual solicitamos un write-lock (lineas 15 a 17). Finalmente comunicamos al cliente el mensaje de OK pero si esto falla terminamos el atendedor. En el caso que la letra no haya sido válida en la palabra debemos limpiar la palabra actual (linea 21).
+		
+		\item \emph{MSG\_PALABRA}: el cliente envía este mensaje cuando ha terminado de ingresar una palabra. Desde el lado del servidor debemos agregar la palabra actual del cliente al tablero de palabras. Para esto nuevamente debemos garantizar acceso exclusivo a la estructura por lo cual pedimos un write-lock sobre el tablero de palabras (lineas 26 a 28). Luego limpiamos la palabra actual del jugador y enviamos al cliente el mensaje OK. Nuevamente, si éste último paso falla terminamos el thread.
+		
+		\item \emph{MSG\_UPDATE}:
+		
+		\item \emph{MSG\_INVALID}:
 	\end{itemize}
 	
-\end{list}	 
-
 \end{document}
 
