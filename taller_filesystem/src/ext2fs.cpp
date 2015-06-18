@@ -291,8 +291,8 @@ struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 	unsigned int inodos_por_bloque = block_size / _superblock->inode_size;
 	unsigned int indice_bloque = inode_index / inodos_por_bloque;
 
-	unsigned int direccion_bloque_del_inodo = blockgroup_desc->inode_table + indice_bloque * block_size;
-	read_block(blockgroup_desc->inode_table + indice_bloque * block_size, buffer);
+	unsigned int direccion_bloque_del_inodo = blockgroup_desc->inode_table + indice_bloque;
+	read_block(direccion_bloque_del_inodo, buffer);
 
 	unsigned int posicion_inodo = _superblock->inode_size * (inode_index % inodos_por_bloque);
 
@@ -359,22 +359,23 @@ struct Ext2FSInode * Ext2FS::get_file_inode_from_dir_inode(struct Ext2FSInode * 
 
 	unsigned int block_size = 1024 << _superblock->log_block_size;
 
-	// Copiamos los primeros 12 bloques al buffer.
-	unsigned int buffer_size = block_size * 12;
+	unsigned int tamano_directorio = from->size;
+	unsigned int cantidad_bloques = tamano_directorio / block_size;
+
+	unsigned int buffer_size = block_size * cantidad_bloques;
 	unsigned char buffer[buffer_size];
-	for (unsigned int i = 0; i < 12; ++i)
+	for (unsigned int i = 0; i < cantidad_bloques; ++i)
 	{
-		read_block(from->block[i], &buffer[block_size * i]);
+		read_block(get_block_address(from, i), &buffer[block_size * i]);
 	}
 
 	unsigned short record_length;
 	unsigned int inode_number;
 	unsigned char* cursor = buffer;
+	unsigned int filename_lenght = strlen(filename);
 	while(buffer_size > 7)
 	{
-		unsigned char name_length = (unsigned char) *(cursor + 6);
-
-		if(strncmp((char*)(cursor + 8), filename, name_length) == 0){
+		if(strcmp((char*)(cursor + 8), filename) == 0){
 			inode_number =  *((unsigned int*) cursor);
 			return load_inode(inode_number);
 		}

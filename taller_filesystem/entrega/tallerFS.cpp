@@ -13,7 +13,7 @@ int main(int argc, char ** argv)
 
 	Ext2FS * fs = new Ext2FS(hdd, 1);
 
-	fd_t file = fs->open("/grupos/g9/nota.txt", "r");
+	fd_t file = fs->open("/grupos/g17/nota.txt", "r");
 
 	int pos = fs->seek(file, 13999);
 	printf("Seek pos:%d\n", pos);
