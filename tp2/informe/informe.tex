@@ -137,9 +137,9 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 	\lstinputlisting[name=Servidor, numbers=left, frame=single]{ejercicio2}
 	\restoregeometry
 
-	Primero se declaran dos variables para almacenar el nombre del jugador y la palabra que este ingresará (lineas 1 y 2). A continuación, en las lineas 3 y 4, se trata de recibir el nombre del jugador y enviarle las dimensiones del tablero. Si alguna de estas operaciones falla se llama a una función que se encarga de cerrar el socket y terminar el thread.
+	Primero se declaran dos variables para almacenar el nombre del jugador y la palabra que este ingresará (lineas 1 y 2). A continuación, en las lineas 3 y 4, se trata de recibir el nombre del jugador y enviarle las dimensiones del tablero. Si alguna de estas operaciones falla se llama a una función que se encarga de cerrar adecuadamente la conexión y terminar el thread.
 	
-	Una vez recibido el nombre del jugador y enviadas las dimensiones del tablero se entra en el ciclo de atención de los pedidos. Al principio de este ciclo se recibe el mensaje enviado por el cliente a travez del socket y se parsea el comando (lineas 6 y 7). Luego el servidor actúa en función del mensaje recibido. Los distintos mensajes son:
+	Una vez recibido el nombre del jugador y enviadas las dimensiones del tablero se entra en el ciclo de atención de los pedidos. Al principio de este ciclo se recibe el mensaje enviado por el cliente a través del socket y se parsea el comando (lineas 6 y 7). Luego el servidor actúa en función del mensaje recibido. Los distintos mensajes son:
 	
 	\begin{itemize}
 		\item \emph{MSG\_LETRA}: el cliente envía este mensaje cuando desea colocar una letra en el tablero. Primero verificamos que la ficha a poner sea válida, si no es así el mensaje se ignora. Si la ficha es válida en el tablero pasamos a verificar que sea válida en la palabra y luego de esta comprobación se pasa a agregar la letra en el tablero de letras. En primer lugar agregamos la letra a la palabra temporal (linea 13) luego procedemos a agregarla al tablero efectivamente. Para esto necesitamos asegurarnos acceso exclusivo a dicho tablero para lo cual solicitamos un write-lock (lineas 15 a 17). Finalmente comunicamos al cliente el mensaje de OK pero si esto falla terminamos el atendedor. En el caso que la letra no haya sido válida en la palabra debemos limpiar la palabra actual (linea 21).
@@ -155,7 +155,7 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 	En el caso en que el comando recibido no sea ninguno de los antes mencionados manejamos la situación vaciando la palabra actual del jugador y luego cerrando el thread.
 	
 	Debemos explicar en mayor detalle algunos aspectos de las funciones es\_valida, enviar\_tablero y es\_ficha\_valida\_en\_palabra ya que todas ellas realizan lecturas de las estructuras compartidas por los distintos thread.
-	Todas estas funciones realizan lecturas sobre el tablero de letras y/o el tablero de palabras y es necesario garantizar acceso compartido con otros threads que estén leyendo la estructura pero avitar que otros escriban en ellas mientras estas están siendo leidas.
+	Todas estas funciones realizan lecturas sobre el tablero de letras y/o el tablero de palabras y es necesario garantizar acceso compartido con otros threads que estén leyendo la estructura pero evitar que otros escriban en ellas mientras estas están siendo leídas.
 	Para ello estas funciones piden un read-lock antes de realizar comprobaciones sobre el tablero; ejemplo: que las posiciones de las letras de una palabra sean válidas, leer el estado de todo el tablero, etc.
 	
 	También cabe aclarar que al realizar un llamado a terminar\_thread ésta función limpia el tablero de letras quitando todas las letras que el cliente haya ingresado hasta el momento, por lo cual esta función también debe solicitar acceso exclusivo al tablero mediante el uso de un write-lock.
