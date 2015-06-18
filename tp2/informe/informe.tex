@@ -99,10 +99,11 @@ Para los locks de los escritores, se adaptó el código que se muestra a continu
 
 \lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=7, lastline=13]{readers-writers.cpp}
 % WLOCK()
-En nuestra adaptación el \emph{turnstile} se utiliza de la misma forma, logrando que al llegar un escritor, todos los lectores que leguen a partir de ese momento, queden bloqueados hasta que el escritor termine de escribir. De esta manera se logra que todos los lectores que ya se encontraban en la sección crítica, terminen de leer y que no entre ningún lector mas, evitando que se produzca inanición de los escritores.
+En nuestra adaptación el \emph{turnstile} se utiliza de la misma forma, logrando que al llegar un escritor, todos los lectores que lleguen a partir de ese momento, queden bloqueados hasta que el escritor termine de escribir. De esta manera se logra que todos los lectores que ya se encontraban en la sección crítica, terminen de leer y que no entre ningún lector mas, evitando que se produzca inanición de los escritores.
 
 La linea $2$ la transformamos en una variable de condición que nos permite chequear que no haya lectores en la sección crítica. Esto se logra bloqueando el semáforo \emph{mutex} para tener acceso exclusivo a \emph{readers} y chequear que sea igual a cero. De no cumplirse esto, se bloquea en la condición \emph{roomEmpty} hasta que el último lector haga el signal. Cuando esto ocurre, el escritor vuelve a obtener el \emph{mutex} con lo cual puede chequear de manera segura que efectivamente se haya cumplido la condición y aumenta \emph{writers} para evitar una race condition en el caso que \emph{readers} sea cero y uno o mas lectores hayan pasado el turnstile justo antes de que llegue el escritor, pero este último haya obtenido el mutex primero, con lo cual no entra en la condición y los lectores al obtener el mutex se bloquean hasta que el escritor termine. Por último el escritor desbloquea el \emph{mutex} y entra en la sección crítica.
 % WUNLOCK()
+
 En \emph{wunlock()} obtenemos el \emph{mutex} para decrementar \emph{writers} y despertamos a todos los lectores que estén bloqueados en la condición. Luego liberamos el mutex y por último liberamos el turnstile para que los lectores vuelvan a tener acceso a la sección crítica.
 
 Notar que al hacer el broadcast no hay riesgo de despertar a un escritor ya que cualquiera que haya llegado después del actual, queda bloqueado en el turnstile. 
@@ -111,7 +112,7 @@ Notar que al hacer el broadcast no hay riesgo de despertar a un escritor ya que 
 \subsection{Código Lectores}
 De la misma forma que se hizo para los escritores, el código que se presenta a continuación, es dividido en las funciones \emph{rlock()} y \emph{runlock()} por la sección crítica.
 
-\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=17, lastline=33]{readers-writers.cpp}
+\lstinputlisting[name=Readers-writers, numbers=left, frame=single, firstline=16, lastline=33]{readers-writers.cpp}
 % RLOCK()
 Las lineas $1$ y $2$ implementan una lógica de molinete, que deja pasar a los threads de a uno por vez. De esta forma, si no hay escritores en la sección crítica y/o esperando para escribir, los lectores bloquean el turnstile y lo liberan inmediatamente, permitiendo que entren mas lectores. Al llegar un escritor, bloquea el turnstile y lo mantiene de esta forma hasta que termina de escribir, por lo que todo lector/escritor que llegue después, va a quedar bloqueado en ese semáforo. Una vez que el escritor desbloquea el turnstile, se genera un efecto en cadena en el que se despiertan todos los threads lectores que estaban esperando ese semáforo, ya que al despertarse uno, vuelve a hacer un unlock con lo cual despierta a otro y así consecutivamente. Esto no se da de la misma manera si en algún lugar de la cadena había un thread escritor esperando, ya que al llegar a ese thread, se corta la cadena y no se despierta al resto de los threads hasta que ese escritor salga de su sección crítica.
 
@@ -136,18 +137,28 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 	\lstinputlisting[name=Servidor, numbers=left, frame=single]{ejercicio2}
 	\restoregeometry
 
-	Primero se declaran dos variables para almacenar el nombre del jugador y la palabra que este ingresará (lineas 1 y 2). A continuación, en las lineas 3 y 4, se trata de recibir el nombre del jugador y enviarle las dimensiones del tablero. Si alguna de estas operaciones falla se llama a una función que se encarga de cerrar el socket y terminar el thread.
+	Primero se declaran dos variables para almacenar el nombre del jugador y la palabra que este ingresará (lineas 1 y 2). A continuación, en las lineas 3 y 4, se trata de recibir el nombre del jugador y enviarle las dimensiones del tablero. Si alguna de estas operaciones falla se llama a una función que se encarga de cerrar adecuadamente la conexión y terminar el thread.
 	
-	Una vez recibido el nombre del jugador y enviadas las dimensiones del tablero se entra en el ciclo de atención de los pedidos. Al principio de este ciclo se recibe el mensaje enviado por el cliente a travez del socket y se parsea el comando (lineas 6 y 7). Luego el servidor actúa en función del mensaje recibido. Los distintos mensajes son:
+	Una vez recibido el nombre del jugador y enviadas las dimensiones del tablero se entra en el ciclo de atención de los pedidos. Al principio de este ciclo se recibe el mensaje enviado por el cliente a través del socket y se parsea el comando (lineas 6 y 7). Luego el servidor actúa en función del mensaje recibido. Los distintos mensajes son:
 	
 	\begin{itemize}
-		\item MSG\_LETRA:
-		\item MSG\_PALABRA:
-		\item MSG\_UPDATE:
-		\item MSG\_INVALID:
+		\item \emph{MSG\_LETRA}: el cliente envía este mensaje cuando desea colocar una letra en el tablero. Primero verificamos que la ficha a poner sea válida, si no es así el mensaje se ignora. Si la ficha es válida en el tablero pasamos a verificar que sea válida en la palabra y luego de esta comprobación se pasa a agregar la letra en el tablero de letras. En primer lugar agregamos la letra a la palabra temporal (linea 13) luego procedemos a agregarla al tablero efectivamente. Para esto necesitamos asegurarnos acceso exclusivo a dicho tablero para lo cual solicitamos un write-lock (lineas 15 a 17). Finalmente comunicamos al cliente el mensaje de OK pero si esto falla terminamos el atendedor. En el caso que la letra no haya sido válida en la palabra debemos limpiar la palabra actual (linea 21).
+		
+		\item \emph{MSG\_PALABRA}: el cliente envía este mensaje cuando ha terminado de ingresar una palabra. Desde el lado del servidor debemos agregar la palabra actual del cliente al tablero de palabras. Para esto nuevamente debemos garantizar acceso exclusivo a la estructura por lo cual pedimos un write-lock sobre el tablero de palabras (lineas 26 a 28). Luego limpiamos la palabra actual del jugador y enviamos al cliente el mensaje OK. Nuevamente, si éste último paso falla terminamos el thread.
+		
+		\item \emph{MSG\_UPDATE}: el cliente envía este mensaje cuando solicita saber el estado del tablero. Para eso llamamos a la función enviar\_tablero y le pasamos el socket de la conexión con el cliente. Si este procedimiento falla cerramos el thread.
+		
+		\item \emph{MSG\_INVALID}: un mensaje explícitamente inválido desde el cliente (lo manejamos solo por completitud).
+	
 	\end{itemize}
 	
-\end{list}	 
+	En el caso en que el comando recibido no sea ninguno de los antes mencionados manejamos la situación vaciando la palabra actual del jugador y luego cerrando el thread.
+	
+	Debemos explicar en mayor detalle algunos aspectos de las funciones es\_valida, enviar\_tablero y es\_ficha\_valida\_en\_palabra ya que todas ellas realizan lecturas de las estructuras compartidas por los distintos thread.
+	Todas estas funciones realizan lecturas sobre el tablero de letras y/o el tablero de palabras y es necesario garantizar acceso compartido con otros threads que estén leyendo la estructura pero evitar que otros escriban en ellas mientras estas están siendo leídas.
+	Para ello estas funciones piden un read-lock antes de realizar comprobaciones sobre el tablero; ejemplo: que las posiciones de las letras de una palabra sean válidas, leer el estado de todo el tablero, etc.
+	
+	También cabe aclarar que al realizar un llamado a terminar\_thread ésta función limpia el tablero de letras quitando todas las letras que el cliente haya ingresado hasta el momento, por lo cual esta función también debe solicitar acceso exclusivo al tablero mediante el uso de un write-lock.
 
 \end{document}
 

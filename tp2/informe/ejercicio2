@@ -11,14 +11,14 @@ while(true){
             if (!es_valida(ficha)) continue;
             if (es_ficha_valida_en_palabra(ficha, palabra_actual)) {
                 palabra_actual.agregar(ficha);
-                
+
                 lock_letras.wlock();
                 tablero_letras.agregar(ficha.letra);
                 lock_letras.wunlock();
 
                 if (!enviar_ok(socket)) terminar_thread(socket);
             } else {
-                quitar_letras(palabra_actual);
+                palabra_actual.vaciar();
                 if (!enviar_error(socket)) terminar_thread(socket);
             }
         }
