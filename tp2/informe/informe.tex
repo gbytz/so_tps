@@ -154,7 +154,11 @@ Notar que en este caso se hace solo un signal y no un broadcast ya que no puede 
 	
 	En el caso en que el comando recibido no sea ninguno de los antes mencionados manejamos la situación vaciando la palabra actual del jugador y luego cerrando el thread.
 	
+	Debemos explicar en mayor detalle algunos aspectos de las funciones es\_valida, enviar\_tablero y es\_ficha\_valida\_en\_palabra ya que todas ellas realizan lecturas de las estructuras compartidas por los distintos thread.
+	Todas estas funciones realizan lecturas sobre el tablero de letras y/o el tablero de palabras y es necesario garantizar acceso compartido con otros threads que estén leyendo la estructura pero avitar que otros escriban en ellas mientras estas están siendo leidas.
+	Para ello estas funciones piden un read-lock antes de realizar comprobaciones sobre el tablero; ejemplo: que las posiciones de las letras de una palabra sean válidas, leer el estado de todo el tablero, etc.
 	
-	
+	También cabe aclarar que al realizar un llamado a terminar\_thread ésta función limpia el tablero de letras quitando todas las letras que el cliente haya ingresado hasta el momento, por lo cual esta función también debe solicitar acceso exclusivo al tablero mediante el uso de un write-lock.
+
 \end{document}
 
