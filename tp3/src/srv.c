@@ -15,11 +15,11 @@ void servidor(int mi_cliente)
     int respuestas_faltantes = (cant_ranks/2)-1;
 
     while( ! listo_para_salir ) {
-        
+
         MPI_Recv(NULL, 0, MPI_INT, ANY_SOURCE, ANY_TAG, COMM_WORLD, &status);
         origen = status.MPI_SOURCE;
         tag = status.MPI_TAG;
-        
+
         if (tag == TAG_PEDIDO) {
             assert(origen == mi_cliente);
             debug("Mi cliente solicita acceso exclusivo");
@@ -27,27 +27,30 @@ void servidor(int mi_cliente)
             hay_pedido_local = TRUE;
             // debug("Dándole permiso (frutesco por ahora)");
             // MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
-            for(int i = 0; i < cant_ranks; i += 2){
+            int i;
+            for(i = 0; i < cant_ranks; i += 2){
                 if( i != mi_rank ){
                     MPI_Send(NULL, 0, MPI_INT, i, TAG_REQUEST, COMM_WORLD);
                 }
             }
         }
-        
+
         else if (tag == TAG_LIBERO) {
             assert(origen == mi_cliente);
             debug("Mi cliente libera su acceso exclusivo");
             assert(hay_pedido_local == TRUE);
             hay_pedido_local = FALSE;
-            for(int i = 0; i < cant_ranks/2; ++i)
+
+            int i;
+            for(i = 0; i < cant_ranks/2; ++i)
             {
                 if( diferidos[i] ){
-                    diferidos[i] = false;
-                    MPI_Send(NULL, 0, MPI_INT, 2*i, TAG_REPLY, COMM_WORLD);   
+                    diferidos[i] = FALSE;
+                    MPI_Send(NULL, 0, MPI_INT, i * 2, TAG_REPLY, COMM_WORLD);
                 }
             }
         }
-        
+
         else if (tag == TAG_TERMINE) {
             assert(origen == mi_cliente);
             debug("Mi cliente avisa que terminó");
@@ -56,9 +59,9 @@ void servidor(int mi_cliente)
 
         else if (tag == TAG_REQUEST) {
             if( hay_pedido_local && mi_rank < origen){
-                diferidos[origen/2] = true;
+                diferidos[origen/2] = TRUE;
             } else {
-                MPI_Send(NULL, 0, MPI_INT, 2*i, TAG_REPLY, COMM_WORLD);
+                MPI_Send(NULL, 0, MPI_INT, origen, TAG_REPLY, COMM_WORLD);
             }
         }
 
@@ -70,6 +73,6 @@ void servidor(int mi_cliente)
             }
         }
     }
-    
+
 }
 
