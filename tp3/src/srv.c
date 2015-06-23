@@ -26,9 +26,12 @@ void servidor(int mi_cliente)
     // Contador de respuestas que me falta recibir para obtener acceso exclusivo
     int respuestas_faltantes = (cant_ranks/2);
 
-    while( ! listo_para_salir ) {
+    int their_sequence_number;
+    int our_sequence_number;
+    int highest_sequence_number = 0;
 
-        MPI_Recv(NULL, 0, MPI_INT, ANY_SOURCE, ANY_TAG, COMM_WORLD, &status);
+    while( ! listo_para_salir ) {
+        MPI_Recv(&their_sequence_number, 1, MPI_INT, ANY_SOURCE, ANY_TAG, COMM_WORLD, &status);
         origen = status.MPI_SOURCE;
         tag = status.MPI_TAG;
 
@@ -38,12 +41,13 @@ void servidor(int mi_cliente)
             assert(hay_pedido_local == FALSE);
 
             hay_pedido_local = TRUE;
+            our_sequence_number = highest_sequence_number + 1;
             respuestas_faltantes = (cant_ranks/2);
             int i;
             for(i = 0; i < cant_ranks; i += 2){
                 // if( i != mi_rank ){
                 debug_server("Enviando Request a", i);
-                MPI_Isend(NULL, 0, MPI_INT, i, TAG_REQUEST, COMM_WORLD, &request);
+                MPI_Isend(&our_sequence_number, 1, MPI_INT, i, TAG_REQUEST, COMM_WORLD, &request);
                 // }
             }
         }
@@ -53,7 +57,6 @@ void servidor(int mi_cliente)
             debug("Mi cliente libera su acceso exclusivo");
             assert(hay_pedido_local == TRUE);
             hay_pedido_local = FALSE;
-
             int i;
             for(i = 0; i < cant_ranks/2; ++i)
             {
@@ -71,7 +74,9 @@ void servidor(int mi_cliente)
         }
 
         else if (tag == TAG_REQUEST) {
-            if( hay_pedido_local && mi_rank < origen){
+            highest_sequence_number = highest_sequence_number > their_sequence_number ? highest_sequence_number : their_sequence_number;
+
+            if( hay_pedido_local && (mi_rank < origen || our_sequence_number < their_sequence_number) ){
                 debug_server("Pospongo pedido de", origen);
                 diferidos[origen/2] = TRUE;
             } else {
