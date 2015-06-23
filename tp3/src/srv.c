@@ -26,6 +26,7 @@ void servidor(int mi_cliente)
 
     // Arreglo para marcar que otros servidores siguen activos.
     int activos[cant_ranks/2];
+    int servers_activos = cant_ranks/2;
 
     // Contador de respuestas que me falta recibir para obtener acceso exclusivo
     int respuestas_faltantes = (cant_ranks/2);
@@ -37,7 +38,7 @@ void servidor(int mi_cliente)
         activos[k] = TRUE;
         espero_respuesta[k] = FALSE;
     }
-
+    activos[mi_nro] = FALSE; // Así evito enviarme/esperar mensajes de mí mismo
 
     int their_sequence_number;
     int our_sequence_number;
@@ -52,17 +53,22 @@ void servidor(int mi_cliente)
             assert(origen == mi_cliente);
             debug("Mi cliente solicita acceso exclusivo");
             assert(hay_pedido_local == FALSE);
-
             hay_pedido_local = TRUE;
-            our_sequence_number = highest_sequence_number + 1;
-            respuestas_faltantes = 0;
-            int i;
-            for(i = 0; i < cant_ranks/2; ++i){
-                if( activos[i] ){
-                    debug_server("Enviando Request a", i * 2);
-                    MPI_Isend(&our_sequence_number, 1, MPI_INT, i * 2, TAG_REQUEST, COMM_WORLD, &request);
-                    espero_respuesta[i] = TRUE;
-                    respuestas_faltantes++;
+
+            if ( cant_ranks == 2 || servers_activos == 1 ) {
+                debug("Dejo pasar a mi cliente");
+                MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+            } else {
+                our_sequence_number = highest_sequence_number + 1;
+                respuestas_faltantes = 0;
+                int i;
+                for(i = 0; i < cant_ranks/2; ++i){
+                    if( activos[i] ){
+                        debug_server("Enviando Request a", i * 2);
+                        MPI_Isend(&our_sequence_number, 1, MPI_INT, i * 2, TAG_REQUEST, COMM_WORLD, &request);
+                        espero_respuesta[i] = TRUE;
+                        respuestas_faltantes++;
+                    }
                 }
             }
         }
@@ -108,7 +114,7 @@ void servidor(int mi_cliente)
         }
 
         else if (tag == TAG_REPLY) {
-            if( hay_pedido_local ){
+            if( hay_pedido_local && espero_respuesta[origen/2] ){
                 debug_server("Recibí respuesta de", origen);
                 espero_respuesta[origen/2] = FALSE;
                 respuestas_faltantes--;
@@ -122,11 +128,12 @@ void servidor(int mi_cliente)
         else if (tag == TAG_ME_CIERRO ){
             debug_server("Me avisa que se cierra", origen);
             if( espero_respuesta[origen/2] ){
+                espero_respuesta[origen/2] = FALSE;
                 respuestas_faltantes--;
             }
             activos[origen/2] = FALSE;
+            servers_activos--;
         }
     }
 
 }
-
