@@ -6,13 +6,25 @@
  *
  */
 
+void debug_server(const char *mje, int origen) {
+#ifndef NDEBUG
+    printf("\trk%-3d %c%-3d %c    %-50s rk%-3d s%-3d\n",
+        mi_rank, mi_rol ? 'c' : 's', mi_nro, mi_char, mje, origen, origen/2);
+#endif
+}
+
 void servidor(int mi_cliente)
 {
     MPI_Status status; int origen, tag;
+    MPI_Request request;
     int hay_pedido_local = FALSE;
     int listo_para_salir = FALSE;
+
+    // Arreglo para marcar los pedidos pospuestos.
     int diferidos[cant_ranks/2];
-    int respuestas_faltantes = (cant_ranks/2)-1;
+
+    // Contador de respuestas que me falta recibir para obtener acceso exclusivo
+    int respuestas_faltantes = (cant_ranks/2);
 
     while( ! listo_para_salir ) {
 
@@ -24,14 +36,15 @@ void servidor(int mi_cliente)
             assert(origen == mi_cliente);
             debug("Mi cliente solicita acceso exclusivo");
             assert(hay_pedido_local == FALSE);
+
             hay_pedido_local = TRUE;
-            // debug("Dándole permiso (frutesco por ahora)");
-            // MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+            respuestas_faltantes = (cant_ranks/2);
             int i;
             for(i = 0; i < cant_ranks; i += 2){
-                if( i != mi_rank ){
-                    MPI_Send(NULL, 0, MPI_INT, i, TAG_REQUEST, COMM_WORLD);
-                }
+                // if( i != mi_rank ){
+                debug_server("Enviando Request a", i);
+                MPI_Isend(NULL, 0, MPI_INT, i, TAG_REQUEST, COMM_WORLD, &request);
+                // }
             }
         }
 
@@ -46,7 +59,7 @@ void servidor(int mi_cliente)
             {
                 if( diferidos[i] ){
                     diferidos[i] = FALSE;
-                    MPI_Send(NULL, 0, MPI_INT, i * 2, TAG_REPLY, COMM_WORLD);
+                    MPI_Isend(NULL, 0, MPI_INT, i * 2, TAG_REPLY, COMM_WORLD, &request);
                 }
             }
         }
@@ -59,17 +72,22 @@ void servidor(int mi_cliente)
 
         else if (tag == TAG_REQUEST) {
             if( hay_pedido_local && mi_rank < origen){
+                debug_server("Pospongo pedido de", origen);
                 diferidos[origen/2] = TRUE;
             } else {
-                MPI_Send(NULL, 0, MPI_INT, origen, TAG_REPLY, COMM_WORLD);
+                debug_server("Le respondo a", origen);
+                MPI_Isend(NULL, 0, MPI_INT, origen, TAG_REPLY, COMM_WORLD, &request);
             }
         }
 
         else if (tag == TAG_REPLY) {
-            respuestas_faltantes--;
-            if(respuestas_faltantes == 0){
-                respuestas_faltantes = 0;
-                MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+            if( hay_pedido_local ){
+                debug_server("Recibí respuesta de", origen);
+                respuestas_faltantes--;
+                if( respuestas_faltantes <= 0 ){
+                    debug("Dejo pasar a mi cliente");
+                    MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+                }
             }
         }
     }
