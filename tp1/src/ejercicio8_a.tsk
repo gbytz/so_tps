@@ -9,6 +9,6 @@ TaskCPU 10
 TaskIO 0 9
 TaskCPU 10
 
-#@3:
-#TaskCPU 10
-#TaskCPU 10
+@3:
+TaskIO 0 9
+TaskCPU 10
