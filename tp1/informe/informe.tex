@@ -400,7 +400,54 @@ Si se analisan los gráficos se puede ver que a partir de quantum 8 no cambia el
 		Como esperabamos es notoria la diferencia entre el uso que estos algoritmos hacen de sus cores. Para la implementación sin migración podemos ver que gran parte del tiempo uno de los cores está inactivo mientras espera a que las tareas se desbloqueen, tal y como habíamos previsto.
 		
 		\subsubsection{Experimento 2}
+		Para este experimento buscabamos hallar un caso en el cual el algoritmo sin migración se comportara mejor que la implementación con migración. Para esto buscamos explotar la debilidad del algoritmo con migración, es decir buscamos aumentar el tiempo de migración. 
+		Con este fin diseñamos un lote de tareas que forzara a que las tareas migraran de un core a otro. El algoritmo sin migración no debería verse afectado en este caso y probablemente sería mas eficiente, al menos respecto del turnaround.
+
+		\begin{figure}[H]
+		\centering
+		\includegraphics[scale=.4, width=1\textwidth]{graficos/ej8-b1-2c}
+		\caption{SchedRR (con migración)}
+		\end{figure}
 		
+		Podemos ver que las tareas ejecutan de manera alterna en cada uno de los cores. En este caso tenemos que el turnaround promedio, para la implementación con migración, es:\\
+		
+		\begin{math}
+			turnaround = \frac{(50-0)+(52-0)+(54-1)+(56-2)+(59-3)+(58-4)+(60-5)+(62-6)}{8} = 53,75 
+		\end{math}
+		
+		Por otra parte el gráfico correspondiente a la ejecución con el algoritmo sin migración es el siguiente:
+		\begin{figure}[H]
+		\centering
+		\includegraphics[scale=.4, width=1\textwidth]{graficos/ej8-b2-2c}
+		\caption{SchedRR2 (sin migración)}
+		\end{figure}
+		
+		Tenemos que el turnaround promedio es este caso es:\\
+		
+		\begin{math}
+			turnaround = \frac{(48-0)+(46-0)+(52-1)+(50-2)+(54-3)+(54-4)+(56-5)+(56-6)}{8} = 49,375
+		\end{math}
+		\\
+		
+		que como esperabamos es menor que el de la primera implementación.
+		
+		En cuanto al uso que hace de los cores cada uno de los algoritmos, podemos notar que es bastante similar analizando los siguientes esquemas.
+		
+		\begin{figure}[H]
+		\centering
+		\includegraphics[scale=.4, width=1\textwidth]{graficos/ej8-b1-2c-cores}
+		\caption{SchedRR (con migración) - Uso de cores}
+		\end{figure}
+		
+		\begin{figure}[H]
+		\centering
+		\includegraphics[scale=.4, width=1\textwidth]{graficos/ej8-b2-2c-cores}
+		\caption{SchedRR2 (sin migración) - Uso de cores}
+		\end{figure}	
+
+		Como se ve, ambos algoritmos hacen un buen balanceo de la carga entre sus cores, sin cargar a uno más que a otro y haciendo un buen uso del tiempo de CPU.
+		
+\pagebreak		
 
 \section{Ejercicio 9}
 
