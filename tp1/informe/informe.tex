@@ -127,7 +127,7 @@ Luego, en el gráfico que se presenta a continuación podemos observar que tenie
 		\subsubsection*{Estructura Interna}
 			Siguiendo el requerimiento del ejercicio implementamos un scheduler Round-Robin con una cola única de procesos para permitir la migración de los mismos entre distintos procesadores.
 			La estructura interna de nuestra implementación es la siguiente:
-			\lstinputlisting[name=RR1, numbers=left, frame=lines, firstline=22, lastline=25]{../tp1-alumnos/sched_rr.h}
+			\lstinputlisting[name=RR1, numbers=left, frame=lines, firstline=22, lastline=25]{../src/sched_rr.h}
 
 			\begin{enumerate}
 				\item \emph{\textbf{quantums:}} vector indexado por número de procesador en el cual almacenamos el quantum inicial de cada procesador. Utilizamos un vector para poder acceder de forma directa a cada quantum.
@@ -143,7 +143,7 @@ Luego, en el gráfico que se presenta a continuación podemos observar que tenie
 			}
 	
 			Ésta estructura es inicializada en el contructor de la clase del scheduler.
-			\lstinputlisting[name=RR1load, numbers=left, frame=lines, firstline=10, lastline=18]{../tp1-alumnos/sched_rr.cpp}		
+			\lstinputlisting[name=RR1load, numbers=left, frame=lines, firstline=10, lastline=18]{../src/sched_rr.cpp}		
 			
 			Primero tomamos el parámetro de la cantidad de cores que tendrá el sistema y luego usamos ese dato para iterar sobre los siguientes parametros. Estos parámetros sin agregados uno a uno en el vector correspondiente.
 			\\
@@ -153,23 +153,23 @@ Luego, en el gráfico que se presenta a continuación podemos observar que tenie
 		\subsubsection*{Método load}
 			La carga de un proceso es bastante simple, sólamente encolamos el pid del nuevo proceso en la cola para que espere a ser ejecutado.
 	
-			\lstinputlisting[name=RR1load, numbers=left, frame=lines, firstline=24, lastline=27]{../tp1-alumnos/sched_rr.cpp}	
+			\lstinputlisting[name=RR1load, numbers=left, frame=lines, firstline=24, lastline=27]{../src/sched_rr.cpp}	
 		
 		\subsubsection*{Método unblock}
 			Al momento de desbloquear un proceso, borramos su pid del conjunto de tareas bloqueadas y luego lo encolamos nuevamente en la cola de procesos.
 			
-			\lstinputlisting[name=RR1unblock, numbers=left, frame=lines, firstline=28, lastline=31]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1unblock, numbers=left, frame=lines, firstline=28, lastline=31]{../src/sched_rr.cpp}
 	
 		\subsubsection*{Método tick}
 			El siguiente método, tick, es ligeramente más complejo así que lo describiremos con algo más de detalle.	
 			
 			Básicamente en este método debemos responder según el motivo por el cual la función fue invocada, así que utilizamos una estructura de switch y tratamos cada motivo por separado.
 			
-			\lstinputlisting[name=RR1tick, numbers=left, frame=lines, firstnumber=auto, firstline=33, lastline=42]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1tick, numbers=left, frame=lines, firstnumber=auto, firstline=33, lastline=42]{../src/sched_rr.cpp}
 			
 			En el caso de que el motivo del llamado es porque se dio un tick del clock primero vemos si se está ejecutando la tarea IDLE y tenemos proceso en espera para ejecutar (linea 7). Si es así, resetamos el quantum y elegimos el próximo proceso a ejecutar (lineas 8 y 9).
 		
-			\lstinputlisting[name=RR1tick, numbers=left, frame=lines, firstnumber=last, firstline=43, lastline=54]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1tick, numbers=left, frame=lines, firstnumber=last, firstline=43, lastline=54]{../src/sched_rr.cpp}
 			
 			Si la tarea que estaba ejecutando al momento del tick no era la IDLE, entonces disminuimos su cuota actual en ese procesador (linea 12).
 			Si a la tarea se le agotó el quantum entonces la desalojamos y la encolamos al final de la cola de procesos (lineas 13 y 14). Esto es lo que genera la rotación de los procesos que ejecutan en ese CPU. A continuación reiniciamos el quantum para ese procesador y elegimos el próximo proceso que pasará a ejecutar (lineas 15 a 17).
@@ -178,21 +178,21 @@ Luego, en el gráfico que se presenta a continuación podemos observar que tenie
 			
 			El siguiente motivo por el cual el scheduler es llamado es el caso en que un proceso realiza una llamada bloqueante.
 		
-			\lstinputlisting[name=RR1tick, numbers=left, frame=lines,firstnumber=last, firstline=55, lastline=59]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1tick, numbers=left, frame=lines,firstnumber=last, firstline=55, lastline=59]{../src/sched_rr.cpp}
 		
 			En este caso lo primero que debemos hacer es efectivamente bloquear al proceso, agregandolo al conjunto de procesos bloqueados (linea 24). Luego reiniciamos el quantum para el CPU que lo estaba corriendo y elegimos el siguiente proceso a ejecutar (lineas 25 y 26).
 			\\
 			
 			El último caso es cuando una tarea avisa que ha terminado su ejecución. En este caso simplemente reseteamos el quantum del procesador y elegimos el siguiente proceso a ejecutar (lineas 29 y 30).
 			
-			\lstinputlisting[name=RR1tick, numbers=left, frame=lines,firstnumber=last, firstline=60, lastline=65]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1tick, numbers=left, frame=lines,firstnumber=last, firstline=60, lastline=65]{../src/sched_rr.cpp}
 			
 			El método tick debe devolver el pid de la próxima tarea a ejecutar luego de la llamada al scheduler y, por lo que hemos visto antes, cada case define dicho pid antes de terminar, el cual es devuelto al final del método.
 
 		\subsubsection*{Método next}
 			Éste es el método encargado de elegir, dado un CPU, cual sería el próximo proceso a ejecutar.
 	
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=68, lastline=77]{../tp1-alumnos/sched_rr.cpp}
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=68, lastline=77]{../src/sched_rr.cpp}
 			
 			Por defecto devolvemos la tarea IDLE (linea 2). Pero si la cola de procesos no está vacía, desencolamos el primero de la cola y lo devolvemos (lineas 3 a 7).
 
@@ -299,7 +299,7 @@ Si se analisan los gráficos se puede ver que a partir de quantum 8 no cambia el
 		\subsubsection*{Estructura Interna}
 			La estructura interna que usamos para implementar este scheduler es la siguiente:
 
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=22, lastline=31]{../tp1-alumnos/sched_rr2.h}
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=22, lastline=31]{../src/sched_rr2.h}
 			
 			\begin{enumerate}
 				\item \emph{\textbf{cpu\_data:}} ésta estructura es un contenedor de otras que nos servirán para llevar cuenta del estado de un procesador.
@@ -315,7 +315,7 @@ Si se analisan los gráficos se puede ver que a partir de quantum 8 no cambia el
 			
 			Ésta estructura se inicializa en con contructor de la clase del scheduler.
 
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=9, lastline=18]{../tp1-alumnos/sched_rr2.cpp}
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=9, lastline=18]{../src/sched_rr2.cpp}
 
 			En primer lugar tomamos la cantidad de cores que recibimos por parámetro e iteramos el resto de los otros parámetros. En cada iteración creamos un \textit{cpu\_data} con los datos de quantum inicial y quantum restante para luego agregarlo a nuestro vector de cpus.\\
 			
@@ -324,18 +324,18 @@ Si se analisan los gráficos se puede ver que a partir de quantum 8 no cambia el
 		\subsubsection*{Método load, get\_unloaded\_cpu y cpu\_load}
 			Al momento de cargar un nuevo proceso debemos obtener el procesador que menor carga tenga, según el criterio mencionado anteriormente. Luego encolamos el proceso el dicho procesador.
 	
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=22, lastline=26]{../tp1-alumnos/sched_rr2.cpp}			
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=22, lastline=26]{../src/sched_rr2.cpp}			
 			
 			Por último guardamos a qué procesador fue asignado el nuevo proceso. Esto lo necesitaremos al momento de desbloquear un proceso ya que necesitamos saber en qué procesador estaba corriendo.
 			
 			Para obtener el procesador con menos carga, simplemente buscamos el mínimo en nuestro vector de cpus.
 	
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=84, lastline=90]{../tp1-alumnos/sched_rr2.cpp}
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=84, lastline=90]{../src/sched_rr2.cpp}
 			
 		\subsubsection*{Método tick y remove\_pid}
 			Esta implementación de tick es practicamente igual a la del scheduler del \textbf{ejercicio 3} con una particularidad al momento de terminar una tarea.
 	
-			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=65, lastline=69]{../tp1-alumnos/sched_rr2.cpp}
+			\lstinputlisting[name=RR1next, numbers=left, frame=lines, firstline=65, lastline=69]{../src/sched_rr2.cpp}
 			
 			En la linea 2 llamamos a \textit{remove\_pid}, método que borra el registro de a cual procesador estaba asociado el proceso.
 	\subsection{Evaluación comparativa de Round-Robin y Round-Robin 2}
