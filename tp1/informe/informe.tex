@@ -276,12 +276,18 @@ Para lograr esto, se le resta uno a \emph{total\_cpu} para tener en cuenta el co
 \pagebreak
 
 \section{Ejercicio 7}
-Para este punto, vamos a tomar las métricas turnaround y eficiencia para tratar de concluir cual es el valor óptimo de quantum para cada una.
+Para este punto, vamos a tomar las métricas turnaround y Waiting time para tratar de concluir cual es el valor óptimo de quantum para cada una.
 
 \subsection{Turnaround}
 El turnaround time se define como el intervalo que va desde el tiempo en que se carga la tarea, hasta que termina de ejecutarse. Lo que significa que para obtener este valor hay que sumar el tiempo de espera para cargarse en memoria, el tiempo de espera en la cola de ready, el tiempo de ejecución de CPU y el tiempo en estado bloqueado.
 
-Para analizar esta métrica, armamos un lote de tareas TaskBatch con 10 ciclos de ejecución de CPU y un valor entre 1 y 8 de cantidad de bloqueos. Este lote lo corrimos con el scheduller round robin para 1, 2 y 3 cores con quantums fijos para todos los cores de 2, 5, 8 y 15.
+\subsection{Waiting time}
+Los distintos algoritmos de scheduling no afectan el tiempo que un proceso utiliza el CPU o consume recursos de IO. Solamente modifica el tiempo que una tarea tiene que esperar para poder acceder a estos recursos. Por lo tanto waiting time es la suma de todos los períodos que una tarea está esperando en estado ready.
+
+\subsection{Análisis de las Métricas}
+
+Para analizar estas métricas, armamos un lote de tareas TaskBatch con 10 ciclos de ejecución de CPU y un valor entre 1 y 8 de cantidad de bloqueos. Este lote lo corrimos con el scheduller round robin para 1, 2 y 3 cores con quantums fijos para todos los cores de 2, 5, 8 y 15.
+
 % 1 CORE
 \begin{figure}[H]
 \centering
@@ -306,6 +312,12 @@ Para analizar esta métrica, armamos un lote de tareas TaskBatch con 10 ciclos d
 \includegraphics[scale=.6, width=1\textwidth]{graficos/ej7-1core-q4}
 \caption{Gráfico con quantum 15 en un solo core}
 \end{figure}
+
+\begin{itemize}
+\item Turnaround: Como se puede observar, al ir aumentando el quantum, el turnaround empieza a disminuir gradualmente hasta que a partir del quantum igual a 8 no se observa mas diferencia, con lo cual se puede concluir que dado este lote de tareas corriendo en un solo core, utilizar un quantum mayor a 8 no tendría sentido.
+\item Waiting time: Para esta métrica también se puede observar una mejora en los resultados al empezar a aumentar el quantum, pero que luego los mismos se mantienen a parartir de un determinado punto.
+% 73 50 49 49
+\end{itemize}
 
 % 2 CORES
 \begin{figure}[H]
@@ -332,6 +344,12 @@ Para analizar esta métrica, armamos un lote de tareas TaskBatch con 10 ciclos d
 \caption{Gráfico con quantum 15 para 2 cores}
 \end{figure}
 
+\begin{itemize}
+\item Turnaround: Al igual que en las pruebas realizadas con un core, con dos cores, primero hay una diferencia notable al aumetar el quantum y luego se va suavizando hasta quedar fija a paratir del quantum 8. Comparando la figura 7 con la 11, también se puede observar una mejora al aumentar la cantidad de cores.
+\item Waiting time: Como esta métrica se puede calcular tomando el turnaround y restándole el tiempo de CPU y IO, los resultados sufren las mismas variaciones. Al analizar los resultados a partir del quantum 8 para uno y dos cores, vemos que hay una mejora del 50\% aproximádamente. 
+% 39 29 26 26
+\end{itemize}
+
 % 3 CORES
 \begin{figure}[H]
 \centering
@@ -357,10 +375,15 @@ Para analizar esta métrica, armamos un lote de tareas TaskBatch con 10 ciclos d
 \caption{Gráfico con quantum 15 para 3 cores}
 \end{figure}
 
-Si se analisan los gráficos se puede ver que a partir de quantum 8 no cambia el turnaround.
+\begin{itemize}
+\item Turnaround: Con tres cores podemos observar que para algunas tareas como por ejemplo la 2, no se produce ninguna mejora hasta el quantum igual a 8 y a partir de ahí se mantiene.
+\item Waiting time: Se puede observar que las diferencias generadas a partir de aumentar el quantum, son menores en comparación con las generadas para menos cores. 
+% 26 19 18 18
+\end{itemize}
 
-%\subsection{Eficiencia} 
-\pagebreak
+En conclusión, por los casos analizados podemos deducir que para estas métricas, un quantum de valor 8 sería apropiado.
+
+%\pagebreak
 
 \section{Ejercicio 8}
 	\subsection{Introducci\'on}
