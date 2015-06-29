@@ -18,14 +18,6 @@ class SchedRR : public SchedBase {
 		virtual int tick(int cpu, const enum Motivo m);
 
 	private:
-		//Codigo para calcular turnaround.
-		// struct turnaround{
-		// 	int pid;
-		// 	int time;
-		// 	bool exit;
-		// };
-		// vector<turnaround> t_time;
-
 		int next(int cpu);
 		vector<int> quantums;
 		vector<int> cuota_actual;
