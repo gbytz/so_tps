@@ -26,6 +26,7 @@
 \usepackage{graphicx}
 \usepackage{verbatim}
 \usepackage{float}
+\usepackage{enumerate}
 \parindent = 0 pt
 \parskip = 11 pt
 
@@ -221,22 +222,49 @@ Al tener dos n\'ucleos, se le agrega valor de migraci\'on de un n\'ucleo a otro.
 
 
 \section{Ejercicio 5}
-Articulo: Liu, Chung Laung, and James W. Layland. Scheduling algorithms for multiprogramming
-in a hard-real-time environment. Journal of the ACM (JACM) 20.1 (1973): 46-61.
+\subsection{Parte 1}
+	
+	\begin{enumerate}[a)]
+	\item En dicho art\'iculo los autores intentan resolver el problema de el uso de varias tareas en un solo procesador. Dado que hay tareas que necesitan servicio garantizado del procesador. 
+		En miras de este problema se estudia la utilizaci\'on de prioridades fijas con las que se lograr\'ia una utilizaci\'on del procesador de un 70 porciento para conjuntos grandes de tareas. Dicho algoritmo consiste en asignar a cada tarea como prioridad el periodo con el que llegan al procesador para jecutarse.
+		As\'i tambi\'en, se estudia otro algoritmo mediante el cual se puede lograr la utilizaci\'on completa del procesador. El mismo consiste en asignar dinámicamente prioridades sobre la base de sus deadlines.
 
-\subsection{Algoritmos de prioridades fijas y din\'amicas}
+	\item En la sección previa a la que introduce el algoritmo de prioridades dinámicas se remarca la limitación que tiene el algoritmo de prioridades fijas, siendo esta la mínima cota superior del \emph{utilization factor} (definida en la \textbf{Sección 5}). Esta cota se aproxima a ln 2 para un número grande de tareas. Se busca entonces mejorar esta situación haciendo que esta cota sea igual a 1. La primera solución que se propone es hacer que la relación entre los períodos de las tareas sea igual a 0 (o sea $\{T_{m}/T_{i}\}$ para $i=1,2,3,...,m-1$), dicho de otra manera, que los períodos sean multiplos unos de otros. Como esta solución no siempre es posible se plantea otra solución que se basa de relajar los deadlines de las tareas e implementar un algoritmo cuyas prioridades sean dinámicas, lo que da pasa a la introdución del algoritmo de la Sección 7.
 
-En dicho art\'iculo los autores intentan resolver el problema de el uso de varias tareas en un solo procesador. Dado que hay tareas que necesitan servicio garantizado del procesador. 
-En miras de este problema se estudia la utilizaci\'on de prioridades fijas con las que se lograr\'ia una utilizaci\'on del procesador de un 70 porciento para conjuntos grandes de tareas. Dicho algoritmo consiste en asignar a cada tarea como prioridad el periodo con el que llegan al procesador para jecutarse.
-As\'i tambi\'en, se estudia otro algoritmo mediante el cual se puede lograr la utilizaci\'on completa del procesador. El mismo consiste en asignar dinámicamente prioridades sobre la base de sus deadlines.
+	\item El teorema 7 básicamente nos dice que para un conjunto de tareas estas son calendarizables utilizando un algoritmo basado en deadlines si la suma de las fracciones de tiempo que el procesador usa para ejecutar cada una de las tareas es menor a 1. Como esta suma es el utilization factor, también podemos decir que tal calendarización es factible si y solo si el utilization factor no es mayor al 100 porciento. Lo cual tiene sentido, ya que no sería posible hacer mayor uso del CPU.
 
-%\subsection{Algoritmo de la secci\'on 7}
+	\end{enumerate}
 
+	
+\subsection{Parte 2}
+	La implementación de estos algoritmos es bastante sencilla y ambas son muy similares una a la otra. Las principales diferencias están en el método utilizado para definir cual es el siguiente procesos a ejecutar (\emph{next}) y el método para cargar los procesos (\emph{load})
 
+	\subsubsection{Algoritmo de Prioridades fijas}
+	Para este algoritmo utilizamos una pequeña estructura de datos en la cual almacenamos el pid de un proceso y su período.
+	
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=21, lastline=24]{../src/sched_fixed.h}
 
-%\subsection{Teorema 7}
+\pagebreak		
 
+	Estos datos son cargados al momento de cargar un proceso en el método \emph{load}.
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=15, lastline=20]{../src/sched_fixed.cpp}
 
+	Luego, al momento de elegir el próximo proceso a ejecutar, buscamos el proceso cuyo período sea el menor de todos (es decir el que tenga mayor request rate, como sugiere el paper).
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=51, lastline=63]{../src/sched_fixed.cpp}
+
+	\subsubsection{Algoritmo de Prioridades dinámicas}
+	Para este algoritmo guardamos, para cada proceso, los mismos datos que para el de prioridades fijas pero llamamos \textit{deadline} al período ya que será lo que utilicemos para representar el deadline de una tarea (en realidad, representa cuanto falta para alcanzar dicho deadline).
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=22, lastline=25]{../src/sched_dynamic.h}
+
+	Al igual que en el algoritmo anterior, estos datos se guardan al momento de cargar un nuevo proceso.
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=15, lastline=20]{../src/sched_dynamic.cpp}
+
+	El método \emph{next} de esta implementación es muy similar a la anterior
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=15, lastline=20]{../src/sched_dynamic.cpp}
+	
+	la diferencia principal recide en que en cada tick, actualizamos \emph{deadline} (en realidad, \emph{deadline} representa cuantos ticks falta para llegar al verdadero deadline)
+	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=51, lastline=63]{../src/sched_dynamic.cpp}		
+	
 
 \section{Ejercicio 6}
 
