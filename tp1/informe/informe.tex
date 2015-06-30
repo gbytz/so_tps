@@ -239,18 +239,21 @@ Al tener dos n\'ucleos, se le agrega valor de migraci\'on de un n\'ucleo a otro.
 \subsection{Parte 2}
 	La implementación de estos algoritmos es bastante sencilla y ambas son muy similares una a la otra. Las principales diferencias están en el método utilizado para definir cual es el siguiente procesos a ejecutar (\emph{next}) y el método para cargar los procesos (\emph{load})
 
+\pagebreak
+
 	\subsubsection{Algoritmo de Prioridades fijas}
 	Para este algoritmo utilizamos una pequeña estructura de datos en la cual almacenamos el pid de un proceso y su período.
 	
 	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=21, lastline=24]{../src/sched_fixed.h}
 
-\pagebreak		
 
 	Estos datos son cargados al momento de cargar un proceso en el método \emph{load}.
 	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=15, lastline=20]{../src/sched_fixed.cpp}
 
 	Luego, al momento de elegir el próximo proceso a ejecutar, buscamos el proceso cuyo período sea el menor de todos (es decir el que tenga mayor request rate, como sugiere el paper).
 	\lstinputlisting[name=Fixed, numbers=left, frame=lines, firstline=51, lastline=63]{../src/sched_fixed.cpp}
+
+\pagebreak
 
 	\subsubsection{Algoritmo de Prioridades dinámicas}
 	Para este algoritmo guardamos, para cada proceso, los mismos datos que para el de prioridades fijas pero llamamos \textit{deadline} al período ya que será lo que utilicemos para representar el deadline de una tarea (en realidad, representa cuanto falta para alcanzar dicho deadline).
@@ -273,7 +276,7 @@ En este ejercicio se crea un nuevo tipo de tarea, llamado TaskBatch que recibe l
 Para lograr esto, se le resta uno a \emph{total\_cpu} para tener en cuenta el costo del exit y luego se hace $\emph{total\_cpu} - \emph{cant\_bloqueos}$ en cada ciclo para poder elegir aleatoriamente cuanto tiempo de CPU ejecutar, sin el riesgo de quedarse sin tiempo para hacer las llamadas bloqueantes. Esto se repite mientras quede tiempo de CPU por consumir. En el caso que este se acabe y no se hayan realizado todas las llamadas bloqueantes, las mismas se ejecutan una atrás de la otra.
 
 
-\pagebreak
+% \pagebreak
 
 \section{Ejercicio 7}
 Para este punto, vamos a tomar las métricas turnaround y Waiting time para tratar de concluir cual es el valor óptimo de quantum para cada una.

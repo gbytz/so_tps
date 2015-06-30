@@ -21,7 +21,6 @@ SchedRR::SchedRR(vector<int> argn) {
 SchedRR::~SchedRR() {
 }
 
-
 void SchedRR::load(int pid) {
 	this->cola_procesos.push(pid); // El llegar un nuevo proceso lo agregamos a la cola.
 }
